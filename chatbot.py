@@ -22,7 +22,7 @@ white_list = []
 
 
 def to_log(question, answer):
-    with open('chat_log.txt', 'a', encoding='utf-8') as f:
+    with open('config/chat_log.txt', 'a', encoding='utf-8') as f:
         log_content = f'Q:{question}---A:{answer} \n'
         print(log_content)
         f.write(log_content)

@@ -3,7 +3,7 @@
 def extract_question():
     with open('question_to_learn.txt', 'a', encoding='utf-8') as file:
         questions = list()
-        with open('chat_log.txt', 'r', encoding='utf-8') as f:
+        with open('corpus/chat_log.txt', 'r', encoding='utf-8') as f:
             for line in f:
                 question = line.split('---')[0][2:]
                 questions.append(question)
