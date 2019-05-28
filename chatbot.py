@@ -14,16 +14,39 @@
 from itchat.content import TEXT
 import itchat
 
-from template import Template
+from filter import LayerFilter
+
+
+layer_filter = LayerFilter()
+white_list = []
+
+
+def to_log(question, answer):
+    with open('chat_log.txt', 'a', encoding='utf-8') as f:
+        log_content = f'Q:{question}---A:{answer} \n'
+        print(log_content)
+        f.write(log_content)
 
 
 def answer_test():
 
+    @itchat.msg_register(TEXT, isGroupChat=True)
+    def group_reply(msg):
+        is_at = msg.isAt
+        if is_at:
+            question = msg.text
+            print(question)
+            answer = layer_filter.get_answer(question)
+            to_log(question, answer)
+            answer = '@' + msg.ActualNickName + ' ' + answer
+            msg.user.send(answer)
+
     @itchat.msg_register(TEXT, isFriendChat=True, isGroupChat=False, isMpChat=False)
-    def simple_reply(msg):
-        template = Template()
-        answer = template.get_answer(msg.text)
-        return answer
+    def single_reply(msg):
+        question = msg.text
+        answer = layer_filter.get_answer(question)
+        to_log(question, answer)
+        msg.user.send(answer)
 
     itchat.auto_login(True)
     itchat.run()

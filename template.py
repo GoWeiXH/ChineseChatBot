@@ -1,12 +1,9 @@
 """
-    模板匹配模块
+    针对机器人的人格信息
 
-    根据输入语句，计算与模板的相似度：
+    根据输入语句，利用正则表达式匹配问句，
 
-        1. 计算与问句的相似度
-        2. 计算与答案的相关度
-
-    输出相似度最高的答案。
+    随机从配置好的答案中输出结果。
 
     输入语句多模板、输出语句多模板
 
@@ -18,7 +15,7 @@ import re
 
 
 class Template:
-    SELF_TEMP_FILE = 'QA_temp/robot_template.xml'
+    SELF_TEMP_FILE = 'config/robot_template.xml'
 
     def __init__(self):
         self.template = self.load_temp_file()
@@ -29,9 +26,11 @@ class Template:
         self.exceed_answer = self.get_default('exceed')
 
     def init_count(self):
+        """相同问题提问次数"""
         return dict().fromkeys(self.robot_info.keys(), 0)
 
     def load_robot_info(self):
+        """加载机器人的人格信息"""
         robot_info_dict = dict()
         robot_info = self.template.find('robot_info')
         for info in robot_info:
@@ -39,19 +38,22 @@ class Template:
         return robot_info_dict
 
     def load_temp_file(self):
+        """加载模板的 xml 文件"""
         root = et.parse(self.SELF_TEMP_FILE)
         return root
 
     def get_default(self, item):
         return self.template.find(item)
 
-    def get_answer(self, question):
+    def search_answer(self, question):
+        """在模板中匹配答案"""
         global match_temp
         match_temp = None
         flag = False
         for temp in self.temps:
             temp_id = temp.attrib.get('id')
 
+            # 根据相同问题已经提问次数返回不同警告
             count = self.question_count.get(temp_id)
             if (count >= 3) and (count < 5):
                 self.question_count[temp_id] += 1
@@ -63,27 +65,29 @@ class Template:
                 self.question_count[temp_id] += 1
                 return self.template.find('limit//l2').text
 
+            # 搜索匹配的相关答案
             qs = temp.find('question').findall('q')
             for q in qs:
                 result = re.search(q.text, question)
                 if result:
                     match_temp = temp
+                    # 匹配到后更改 标记
                     flag = True
                     self.question_count[temp_id] += 1
                     break
             if flag:
+                # 如果已经找打答案则跳出循环
                 break
 
         if match_temp:
             a_s = match_temp.find('answer').findall('a')
             answer = choice(a_s).text
+            return answer.format(**self.robot_info)
         else:
-            answer = choice(self.default_answer).text
-
-        return answer.format(**self.robot_info)
+            return None
 
 
-# _q = '介绍一下你的爱好'
+# _q = '介绍一下你'
 # template = Template()
 # answer = template.get_answer(_q)
 # print(answer)
