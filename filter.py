@@ -10,6 +10,7 @@
 
 from xml.etree import ElementTree as et
 from random import choice
+from urllib.error import HTTPError
 
 from internet import SogouSpider
 from template import Template
@@ -20,7 +21,7 @@ class LayerFilter:
 
     DEFAULT_PATH = 'config/default_answer.xml'
 
-    SOGOU_SWITCH = True
+    SOGOU_SWITCH = False
 
     def __init__(self):
         self.default_answers = self.get_default()
@@ -61,7 +62,11 @@ class LayerFilter:
 
         # 如果联网模式开启，则进入联网搜索模块处理
         if self.SOGOU_SWITCH:
-            answer = self.sogou.get_answer(question)
+            try:
+                answer = self.sogou.get_answer(question)
+            except HTTPError as e:
+                print(e)
+                answer = input()
             if answer:
                 return answer
 
