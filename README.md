@@ -49,18 +49,7 @@
 - #### config 文件
 
     - default_answer.xml 配置了默认答案，当没有联网的情况下且未找到匹配答案时返回默认答案<br>
-    需要注意的是，<robot_info>下的 tag 名称要与 <temp id='name'>的 id 值一致<br>
-    例如：
-   '''
-    <root>
-        <robot_info>
-            <age>18<age>
-        </robot_info>
-        <temp id='age'>
-            ...
-        </temp>
-    </root>
-    '''
+    需要注意的是，<robot_info>下的 tag 名称要与 <temp id='name'>的 id 值一致
     - robot_template.xml 配置了机器人的固定人格信息即相应回答
     - special_words.txt 配置了特殊不想被且分开的词汇
 
