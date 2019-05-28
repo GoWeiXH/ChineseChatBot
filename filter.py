@@ -9,30 +9,35 @@
 """
 
 from xml.etree import ElementTree as et
-from random import choice
 from urllib.error import HTTPError
+from random import choice
 
 from internet import SogouSpider
 from template import Template
 from search import Search
 
+from process import Vocabulary
+from config import *
+
 
 class LayerFilter:
-
-    DEFAULT_PATH = 'config/default_answer.xml'
 
     SOGOU_SWITCH = False
 
     def __init__(self):
+        vocab = Vocabulary()
+        vocab.build_vocab()
+        vocab.build_inverse()
         self.default_answers = self.get_default()
         self.template = Template()
         self.search = Search()
         self.sogou = SogouSpider()
 
-    def get_default(self):
+    @staticmethod
+    def get_default():
         """加载默认答案"""
         answers = list()
-        root = et.parse(self.DEFAULT_PATH)
+        root = et.parse(DEFAULT_PATH)
         a_s = root.find('default').findall('a')
         for a in a_s:
             answers.append(a.text)

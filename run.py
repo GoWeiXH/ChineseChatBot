@@ -17,7 +17,7 @@ def main():
 
 def test():
 
-    question = '加油加油'
+    question = '加油'
 
     layer_filter = LayerFilter()
     answer = layer_filter.get_answer(question)

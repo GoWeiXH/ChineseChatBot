@@ -16,13 +16,7 @@ jieba.setLogLevel('INFO')
 
 class SogouSpider:
 
-    NAME = 'Sogou'
-
-    DATA_PATH = 'corpus/Sogou_QA/'
-
-    VIEWED_FILE = 'corpus/viewed/viewed_sogou.json'
-
-    DOMAIN = 'https://www.sogou.com'
+    DOMAIN = 'https://www.sogou.com/'
 
     # 搜索问题的链接
     QUERY_URL = 'https://www.sogou.com/sogou?query={0}&ie=utf8&insite=wenwen.sogou.com'

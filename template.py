@@ -13,9 +13,10 @@ import xml.etree.ElementTree as et
 from random import choice
 import re
 
+from config import *
+
 
 class Template:
-    SELF_TEMP_FILE = 'config/robot_template.xml'
 
     def __init__(self):
         self.template = self.load_temp_file()
@@ -37,9 +38,10 @@ class Template:
             robot_info_dict[info.tag] = info.text
         return robot_info_dict
 
-    def load_temp_file(self):
+    @staticmethod
+    def load_temp_file():
         """加载模板的 xml 文件"""
-        root = et.parse(self.SELF_TEMP_FILE)
+        root = et.parse(SELF_TEMP_FILE)
         return root
 
     def get_default(self, item):
