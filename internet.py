@@ -9,9 +9,6 @@ from random import choice
 import re
 
 from bs4 import BeautifulSoup
-import jieba
-
-jieba.setLogLevel('INFO')
 
 
 class SogouSpider:

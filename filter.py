@@ -12,12 +12,16 @@ from xml.etree import ElementTree as et
 from urllib.error import HTTPError
 from random import choice
 
+import jieba
+
 from internet import SogouSpider
+from process import WordFactory
 from template import Template
 from search import Search
-
-from process import Vocabulary
 from config import *
+
+
+jieba.setLogLevel('INFO')
 
 
 class LayerFilter:
@@ -25,9 +29,9 @@ class LayerFilter:
     SOGOU_SWITCH = False
 
     def __init__(self):
-        vocab = Vocabulary()
-        vocab.build_vocab()
-        vocab.build_inverse()
+        wf = WordFactory()
+        wf.build_vocab()
+        wf.build_inverse()
         self.default_answers = self.get_default()
         self.template = Template()
         self.search = Search()

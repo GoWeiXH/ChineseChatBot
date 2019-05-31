@@ -27,20 +27,26 @@ import json
 import time
 import re
 
+from gensim.models import Word2Vec
 import jieba
 
 from config import *
 
 
-jieba.setLogLevel('INFO')
+class WordFactory:
 
-
-class Vocabulary:
+    pad = 0
+    start = 1
+    end = 2
 
     def __init__(self):
         self.load_special_words()
         self.vocab = self.get_vocab()
         self.inverse = self.get_inverse()
+        self.zip_QA = self.load_seq_qa()
+        self.question_list = self.zip_QA[0]
+        self.answer_list = self.zip_QA[1]
+        self.qa_list = self.concat_qa()
 
     @staticmethod
     def load_special_words():
@@ -55,39 +61,32 @@ class Vocabulary:
         with open(SEQ_CORPUS_PATH, 'r', encoding='utf-8') as f:
             for i, line in enumerate(f):
                 line = line.strip()
+                line = re.sub(r'[0-9]*', '', line)
+                line = jieba.lcut(line)
                 if i % 2 == 0:
                     q_list.append(line)
                 if i % 2 == 1:
                     a_list.append(line)
         return q_list, a_list
 
-    @staticmethod
-    def load_split_qa():
-        """从问题、答案两个语料库文件中加载语料"""
-        split_qa = list()
-        for item in SPLIT_CORPUS_PATH:
-            corpus = json.load(open(item, 'r', encoding='utf-8'))
-            split_qa.append(corpus.get('data'))
-
-        q_list, a_list = split_qa
-        return q_list, a_list
+    def concat_qa(self):
+        """将每轮的问句与回答进行拼接"""
+        qa_list = [q + a for q, a in zip(self.question_list, self.answer_list)]
+        return qa_list
 
     def build_vocab(self):
-        """建立字典，键为词、值为序号"""
+        """根据问句建立字典，键为词、值为序号"""
         q_list, _ = self.load_seq_qa()
-        qw_list = list()
         vocab = set()
 
         # 对每个问句分词
         for q in q_list:
-            q = re.sub(r'[0-9]*', '', q)
-            words = jieba.lcut(q)
-            qw_list.append(words)
-            vocab |= set(words)
+            vocab |= set(q)
 
-        word_dict = dict(zip(vocab, range(len(vocab))))
-        word_dict['<end>'] = -1
-        word_dict['<start>'] = -2
+        word_dict = dict(zip(vocab, range(3, len(vocab)+3)))
+        word_dict['<pos>'] = self.pad
+        word_dict['<end>'] = self.end
+        word_dict['<start>'] = self.start
 
         with open(VOCABULARY_PATH, 'w', encoding='utf-8') as f:
             json.dump(word_dict, f, ensure_ascii=False)
@@ -101,7 +100,7 @@ class Vocabulary:
         return vocab
 
     def build_inverse(self):
-        """构建倒排索引"""
+        """根据问句构建倒排索引"""
         vocab = self.get_vocab()
         q_list, _ = self.load_seq_qa()
         inverse_index_dict = dict().fromkeys(vocab.keys())
@@ -110,8 +109,6 @@ class Vocabulary:
 
         # 记录出现相应的词的文档，建立倒排索引
         for i, qw in enumerate(q_list):
-            qw = re.sub(r'[0-9]*', '', qw)
-            qw = jieba.lcut(qw)
             for w in qw:
                 inverse_index_dict[w].append(i)
 
@@ -126,6 +123,45 @@ class Vocabulary:
             inverse_index = json.load(f)
         return inverse_index
 
+    def sent2vec(self, ml=0, limit=999):
+        """将句子转换成句子向量，每个词以数字表示"""
+
+        # 获取句子最大长度
+        max_len = ml
+        q_list = list()
+        for q in self.question_list:
+            q_len = len(q)
+
+            # 提出超过长度限制的语句
+            if q_len > limit:
+                continue
+            max_len = q_len if q_len > max_len else max_len
+
+            # 将词转化未数字索引
+            q_words = list(map(lambda k: self.vocab[k], q))
+            q_list.append(q_words)
+
+        max_len += 1  # 考虑 <end> 标签
+
+        # 以 添加 <end> 标签，并用 <pos> 标签填补
+        def to_vec(sents):
+            for sent in sents:
+                d = max_len - len(sent)
+                yield sent + [self.end] + [self.pad] * d
+
+        return to_vec(q_list)
+
+    def build_word2vec(self, skip_gram=False):
+        word2vec = Word2Vec(self.qa_list, size=100, sg=skip_gram, min_count=1)
+        word2vec.save(WORD2VEC_MODEL_PATH)
+        print(f'Word2Vec 训练完成！ --- {WORD2VEC_MODEL_PATH}')
+
+    @staticmethod
+    def get_word2vec():
+        word2vec = Word2Vec.load(WORD2VEC_MODEL_PATH)
+        print('Word2Vec 加载完成！')
+        return word2vec
+
 
 class LTProcess:
     """LTP 云平台相关功能"""
@@ -133,10 +169,10 @@ class LTProcess:
     URL = "http://ltpapi.xfyun.cn/v1/{func}"
 
     # 开放平台应用ID
-    X_APPID = "5cea61f2"
+    X_APPID = "******"
 
     # 开放平台应用接口秘钥
-    API_KEY = "bce45c6ce0be6075e45c6b33f5b38945"
+    API_KEY = "******"
 
     def get_response(self, text, func):
         param = {"type": "dependent"}
@@ -175,6 +211,12 @@ class LTProcess:
         return self.get_response(text, func).get('data').get(func)
 
 
-# vocabulary = Vocabulary()
-# vocabulary.build_vocab()
-# vocabulary.build_inverse()
+# wf = WordFactory()
+# wf.build_vocab()
+# wf.build_inverse()
+# vecs = wf.sent2vec()
+# print(list(vecs))
+# wf.build_word2vec()
+# w2v = wf.get_word2vec()
+# result = w2v.most_similar('鼠标')
+# print(result)
