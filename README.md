@@ -2,10 +2,19 @@
 
 一个利用模板匹配、问题检索、联网搜索、以及答案生成等方法，完成问答交互的中文聊天机器人。
 
+- #### 聊天效果
+    <pre><code>
+    >> 你好
+    你好，你是哪位
+    >> 我是你爸爸
+    真不怕给自己折寿...
+    </code></pre>
+    
+
 - #### 项目介绍
 
     1. 模板匹配：利用 XML 文件配置相关人格等固定信息，根据正则表达式匹配答案
-    2. 问题检索：利用倒排索引搜索问题，用余弦相似度筛选答案
+    2. 问题检索：利用倒排索引，用余弦相似度筛选答案；或根据知识图谱搜索问题
     3. 联网搜索：利用搜狗问问的搜索引擎对问题进行实时搜索
     4. 答案生成：利用 Seq2Seq 模型以及机器学习方法生成答案（尚未加入该模块）
     
@@ -17,33 +26,31 @@
 
 - #### 代码组织结构
     
-    - template.py 是模板匹配模块    
-    - search.py 是问题检索模块
-    - generate.py 是答案生成模块（尚未添加功能）
-    - internet.py 是联网搜索模块
-    - process.py 是处理模块，提供分词、提取关键字、清洗词句等功能
-    - score.py 是打分模块，对个模块的答案进行评分处理（尚未添加）
+    - layer.py
+        - 类 BaseLayer 基础类，父类
+        - 类 Template 是模板匹配模块    
+        - 类 CorpusSearch 是问题检索模块
+        - 类 MedicalSearch 从医疗知识图谱中检索问题
+        - 类 Generate 是答案生成模块（尚未添加功能）
+        - 类 Internet 是联网搜索模块
+    - factory.py 是处理模块，提供分词、提取关键字、清洗词句等功能
     - filter.py 是层级处理模块，主要控制各模块的顺序运行（添加 score.py 会加入 re-rank 机制）
-    - run.py 本地单机聊天测试
-    - chatbot.py 登陆微信，线上自动聊天测试
+    - chatbot.py 聊天机器人，拥有联网微信以及本地两种聊天模式
+    - run.py 启动机器人
 
 
 - #### 运行方法
     
-    1. 调用 filter.py 中的 get_answer()<br>
+    运行 run.py 文件<br>
     <pre><code>
-    from filter import LayerFilter
-    question = '你好'
-    layer_filter = LayerFilter()
-    answer = layer_filter.get_answer(question)
-    print(answer)
-    
-    >>> 你好~，你是哪位
-    </code></pre>
-    
-    2. 运行 chatbot.py 中的 answer_test()<br>
-    <pre><code>
-    answer_test()
+    from chatbot import WXChatBot
+
+    if __name__ == '__main__':
+        bot = WXChatBot()
+        
+        # bot.inter_start()
+        bot.local_start()
+      
     </code></pre>
    
 - #### config 文件
@@ -52,6 +59,10 @@
     需要注意的是，<robot_info>下的 tag 名称要与 <temp id='name'>的 id 值一致
     - robot_template.xml 配置了机器人的固定人格信息即相应回答
     - special_words.txt 配置了特殊不想被且分开的词汇
+    - chat_log.txt 记录了运行中多有的对话
+    - inverse_index.json 语料库的倒排索引文件
+    - vocab_from_q.json 从语料库中提取出的词典，以 key-value 形式
+    - word2vec.model 利用 gensim 进行 Word Embedding，训练得出的 word2vec 模型，
 
 - #### 聊天数据
 

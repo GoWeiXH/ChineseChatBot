@@ -1,10 +1,12 @@
-BASE_CORPUS_PATH = 'corpus/'
+# 语料库文件存储路径
+BASE_CORPUS_PATH = 'data_corpus/'
 
 SEQ_CORPUS_PATH = BASE_CORPUS_PATH + 'conversation_test.txt'
 
 SPLIT_CORPUS_PATH = [BASE_CORPUS_PATH + 'english_movie_q.json',
                      BASE_CORPUS_PATH + 'english_movie_a.json']
 
+# 配置数据文件的存储路径
 BASE_CONFIG = 'config/'
 
 VOCABULARY_PATH = BASE_CONFIG + 'vocab_from_q.json'
@@ -19,8 +21,16 @@ DEFAULT_PATH = BASE_CONFIG + 'default_answer.xml'
 
 WORD2VEC_MODEL_PATH = BASE_CONFIG + 'word2vec.model'
 
+# 知识图谱的基础存储路径
 BASE_INDEX_PATH = 'kg_index/'
 
-ENTITY_BASE_PATH = BASE_INDEX_PATH + 'entity_node/'
+# 医药领域知识图谱的存储路径
+MEDICAL_BASE_INDEX_PATH = BASE_INDEX_PATH + 'medical/'
 
-RELATION_INDEX_PATH = BASE_INDEX_PATH + 'relation_edge/'
+MEDICAL_SPECIAL_WORDS_PATH = MEDICAL_BASE_INDEX_PATH + 'special_words.txt'
+
+MEDICAL_ORIGIN_INDEX_PATH = MEDICAL_BASE_INDEX_PATH + 'origin_index.json'
+
+MEDICAL_ENTITY_BASE_PATH = MEDICAL_BASE_INDEX_PATH + 'entity_node/'
+
+MEDICAL_RELATION_INDEX_PATH = MEDICAL_BASE_INDEX_PATH + 'relation_edge/'

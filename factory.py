@@ -22,6 +22,7 @@
 import urllib.request
 import urllib.parse
 import hashlib
+import logging
 import base64
 import json
 import time
@@ -30,16 +31,19 @@ import re
 from gensim.models import Word2Vec
 import jieba
 
-from config import *
+from config.path_config import *
 
 
-class WordFactory:
+class WordWorker:
 
     pad = 0
     start = 1
     end = 2
 
-    def __init__(self):
+    def __init__(self, log=True):
+        self.logger = logging.getLogger()
+        if not log:
+            self.close_log()
         self.load_special_words()
         self.vocab = self.get_vocab()
         self.inverse = self.get_inverse()
@@ -48,10 +52,17 @@ class WordFactory:
         self.answer_list = self.zip_QA[1]
         self.qa_list = self.concat_qa()
 
+    def close_log(self):
+        self.logger.setLevel(logging.ERROR)
+
+    def print_log(self, msg):
+        self.logger.warning(msg)
+
     @staticmethod
     def load_special_words():
         """加载固定词语，禁止分词"""
         jieba.load_userdict(SPECIAL_WORDS_PATH)
+        jieba.load_userdict(MEDICAL_SPECIAL_WORDS_PATH)
 
     @staticmethod
     def load_seq_qa():
@@ -90,7 +101,7 @@ class WordFactory:
 
         with open(VOCABULARY_PATH, 'w', encoding='utf-8') as f:
             json.dump(word_dict, f, ensure_ascii=False)
-        print(f'字典构建完成！--- {VOCABULARY_PATH}')
+        self.print_log('Vocabulary is completed.')
 
     @staticmethod
     def get_vocab():
@@ -114,7 +125,7 @@ class WordFactory:
 
         with open(INVERSE_INDEX_PATH, 'w', encoding='utf-8') as f:
             json.dump(inverse_index_dict, f, ensure_ascii=False)
-        print(f'倒排索引构建完成！ --- {INVERSE_INDEX_PATH}')
+        self.print_log('Inverse index is completed.')
 
     @staticmethod
     def get_inverse():
@@ -154,16 +165,15 @@ class WordFactory:
     def build_word2vec(self, skip_gram=False):
         word2vec = Word2Vec(self.qa_list, size=100, sg=skip_gram, min_count=1)
         word2vec.save(WORD2VEC_MODEL_PATH)
-        print(f'Word2Vec 训练完成！ --- {WORD2VEC_MODEL_PATH}')
+        self.print_log(f'Word2Vec 训练完成！ --- {WORD2VEC_MODEL_PATH}')
 
-    @staticmethod
-    def get_word2vec():
+    def get_word2vec(self):
         word2vec = Word2Vec.load(WORD2VEC_MODEL_PATH)
-        print('Word2Vec 加载完成！')
+        self.print_log('Word2Vec 加载完成！')
         return word2vec
 
 
-class LTProcess:
+class LTPWorker:
     """LTP 云平台相关功能"""
 
     URL = "http://ltpapi.xfyun.cn/v1/{func}"

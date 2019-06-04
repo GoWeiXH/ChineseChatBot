@@ -8,34 +8,37 @@
     如果最终没有获得相关答案则返回默认答案
 """
 
-from xml.etree import ElementTree as et
-from urllib.error import HTTPError
-from random import choice
-
-import jieba
-
-from internet import SogouSpider
-from process import WordFactory
-from template import Template
-from search import Search
-from config import *
-
+from layer import *
 
 jieba.setLogLevel('INFO')
 
 
 class LayerFilter:
-
-    SOGOU_SWITCH = False
+    INTERNET = False
 
     def __init__(self):
-        wf = WordFactory()
-        wf.build_vocab()
-        wf.build_inverse()
+        self.make_word_worker()
         self.default_answers = self.get_default()
-        self.template = Template()
-        self.search = Search()
-        self.sogou = SogouSpider()
+        self.pipeline = [Template(), CorpusSearch(), self.make_medical()]
+
+    @staticmethod
+    def make_word_worker(build=True):
+        """初始化语料库的倒排索引"""
+
+        ww = WordWorker()
+        if build:
+            ww.build_vocab()
+            ww.build_inverse()
+
+    @staticmethod
+    def make_medical(build=True):
+        """初始化医疗知识图谱"""
+
+        entities = ['name', 'symptom', 'common_drug', 'recommand_drug', 'check', 'category']
+        medical_search = MedicalSearch(MEDICAL_ORIGIN_INDEX_PATH, entities, 'name')
+        if build:
+            medical_search.build_graph()
+        return medical_search
 
     @staticmethod
     def get_default():
@@ -52,32 +55,24 @@ class LayerFilter:
 
         # 互联网模式是否开启
         if question == 'Robot-单机模式':
-            self.SOGOU_SWITCH = False
+            self.INTERNET = False
+            index = len(self.pipeline) - 1
+            self.pipeline.pop(index)
             return '联网模式关闭'
 
         if question == 'Robot-联网模式':
-            self.SOGOU_SWITCH = True
+            self.INTERNET = True
+            self.pipeline.append(InterNet())
             return '联网模式启动'
 
-        # 先经过模板层处理
-        answer = self.template.search_answer(question)
-        if answer:
-            return answer
-
-        # 经过搜索层处理
-        answer = self.search.search_answer(question)
-        if answer:
-            return answer
-
-        # 如果联网模式开启，则进入联网搜索模块处理
-        if self.SOGOU_SWITCH:
+        # 以此经过各模块处理，如果找到答案则直接返回
+        for p in self.pipeline:
             try:
-                answer = self.sogou.get_answer(question)
-            except HTTPError as e:
+                answer = p.search_answer(question)
+                if answer:
+                    return answer
+            except Exception as e:
                 print(e)
-                answer = input()
-            if answer:
-                return answer
 
         # 如果最终没有答案，则随机选择默认答案输出
         return choice(self.default_answers)
